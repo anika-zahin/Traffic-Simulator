@@ -92,42 +92,6 @@ The result is emergent behavior — bottlenecks form at intersections, cars floo
 
 ---
 
-## Installation
-
-```bash
-git clone https://github.com/csb24006-blip/traffic-simulator
-cd traffic-simulator
-pip install numpy pandas matplotlib
-```
-
----
-
-## Usage
-
-Run each stage independently or in sequence:
-
-```bash
-# Generate and visualize the city grid
-python city.py
-
-# Test car spawning and basic movement
-python cars.py
-
-# Test Dijkstra pathfinding
-python pathfinding.py
-
-# Run the full simulation and save history to CSV
-python simulation.py
-
-# Analyze the saved simulation data
-python analysis.py
-
-# Launch the live animation
-python visualize.py
-```
-
----
-
 ## Animation Controls
 
 | Setting | Location | Effect |
