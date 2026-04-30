@@ -4,8 +4,7 @@ A data-driven city traffic simulator built entirely with **NumPy**, **Pandas**, 
 
 ![Analysis Dashboard](analysis_dashboard.png)
 
-![Live Simulation](<img width="800" height="420" alt="traffic_simulation" src="https://github.com/user-attachments/assets/f121fe3d-d400-4c43-909c-09d8be1bb1ee" />
-)
+![Live Simulation](traffic_simulation.gif)
 
 ---
 
