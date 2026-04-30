@@ -258,16 +258,16 @@ def run_animation():
                 line_cong, line_mean, info_text)
 
 
-    ani = animation.FuncAnimation(
-        fig,
-        update,
-        frames=MAX_TICKS,
-        interval=INTERVAL_MS,
-        blit=False,     # blit=False is safer across platforms
-        repeat=False
-    )
+    ani = animation.FuncAnimation(...)
 
-    plt.show()
+save = input("Save animation as GIF? (y/n): ").strip().lower()
+if save == 'y':
+    print("Saving... this may take 30–60 seconds...")
+    from matplotlib.animation import PillowWriter
+    ani.save("traffic_simulation.gif", writer=PillowWriter(fps=8), dpi=80)
+    print("Saved ✓")
+
+plt.show()
 
     
   save = input("\nSave animation as GIF? (y/n): ").strip().lower()
