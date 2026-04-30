@@ -1,3 +1,5 @@
+INTERVAL_MS = 200
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,11 +14,16 @@ from pathfinding import (build_congestion_map, compute_all_paths,
                          move_cars_with_paths)
 
 
-MAX_TICKS   = 100
+# ── Settings ───────────────────────────────────────────────────────────────────
+MAX_TICKS    = 100
 REPATH_EVERY = 5
-RUSH_HOUR   = 20
-INTERVAL_MS = 200   # milliseconds between frames — lower = faster animation
+RUSH_HOUR    = 20
+INTERVAL_MS  = 200   # milliseconds between frames — lower = faster animation
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BUILD STATIC CITY BACKGROUND IMAGE
+# ══════════════════════════════════════════════════════════════════════════════
 
 def build_city_image(grid):
     """
@@ -41,6 +48,10 @@ def build_city_image(grid):
     return image
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# SET UP THE FIGURE
+# ══════════════════════════════════════════════════════════════════════════════
+
 def build_figure():
     """
     Create the full figure layout:
@@ -57,12 +68,12 @@ def build_figure():
                   top=0.92, bottom=0.08)
 
     # City map — spans all 3 rows on the left
-    ax_city = fig.add_subplot(gs[:, 0])
+    ax_city  = fig.add_subplot(gs[:, 0])
 
     # Stats panels on the right
-    ax_cars = fig.add_subplot(gs[0, 1])   # moving vs arrived count
-    ax_cong = fig.add_subplot(gs[1, 1])   # congestion over time
-    ax_info = fig.add_subplot(gs[2, 1])   # text info box
+    ax_cars  = fig.add_subplot(gs[0, 1])   # moving vs arrived count
+    ax_cong  = fig.add_subplot(gs[1, 1])   # congestion over time
+    ax_info  = fig.add_subplot(gs[2, 1])   # text info box
 
     # Style all axes dark
     for ax in [ax_city, ax_cars, ax_cong]:
@@ -83,24 +94,30 @@ def build_figure():
     return fig, ax_city, ax_cars, ax_cong, ax_info
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN ANIMATION
+# ══════════════════════════════════════════════════════════════════════════════
+
 def run_animation():
 
+    # ── Init simulation state ──────────────────────────────────────────────────
     grid       = create_city()
     cars       = create_cars(grid)
     city_image = build_city_image(grid)
     paths      = {}
 
     # History buffers for live charts
-    ticks_log   = []
-    moving_log  = []
-    arrived_log = []
-    cong_log    = []
+    ticks_log    = []
+    moving_log   = []
+    arrived_log  = []
+    cong_log     = []
 
     rush_triggered = False
-    rush_car_ids   = set()
 
+    # ── Build figure ───────────────────────────────────────────────────────────
     fig, ax_city, ax_cars, ax_cong, ax_info = build_figure()
 
+    # ── City map base layer ────────────────────────────────────────────────────
     ax_city.imshow(city_image, interpolation='nearest', zorder=1)
 
     # Congestion overlay — starts as zeros, updates every frame
@@ -119,13 +136,13 @@ def run_animation():
 
     # Car scatter plots — moving (blue) and arrived (green)
     scat_moving  = ax_city.scatter([], [], c='#3498db', s=40,
-                                   zorder=5, label='Moving')
+                                    zorder=5, label='Moving')
     scat_arrived = ax_city.scatter([], [], c='#2ecc71', s=40,
-                                   zorder=5, label='Arrived')
+                                    zorder=5, label='Arrived')
 
     # Rush hour cars get a special orange color
     scat_rush = ax_city.scatter([], [], c='#f39c12', s=40,
-                                zorder=5, label='Rush hour')
+                                 zorder=5, label='Rush hour')
 
     # Legend
     legend_elements = [
@@ -142,14 +159,15 @@ def run_animation():
                    facecolor='#1a1a2e', labelcolor='white')
 
     ax_city.set_title("Live City Map", color='white',
-                      fontweight='bold', fontsize=12)
+                       fontweight='bold', fontsize=12)
     ax_city.set_xlabel("X", color='white')
     ax_city.set_ylabel("Y", color='white')
 
+    # ── Stats charts ───────────────────────────────────────────────────────────
     line_moving,  = ax_cars.plot([], [], color='#3498db',
-                                 linewidth=2, label='Moving')
+                                  linewidth=2, label='Moving')
     line_arrived, = ax_cars.plot([], [], color='#2ecc71',
-                                 linewidth=2, label='Arrived')
+                                  linewidth=2, label='Arrived')
     ax_cars.set_xlim(0, MAX_TICKS)
     ax_cars.set_ylim(0, NUM_CARS * 1.6)
     ax_cars.set_title("Cars Over Time", fontsize=9, fontweight='bold')
@@ -160,9 +178,9 @@ def run_animation():
                     color='orange', label='Rush hour')
 
     line_cong, = ax_cong.plot([], [], color='#e74c3c',
-                              linewidth=2, label='Peak')
+                               linewidth=2, label='Peak')
     line_mean, = ax_cong.plot([], [], color='#f39c12',
-                              linewidth=2, linestyle='--', label='Mean')
+                               linewidth=2, linestyle='--', label='Mean')
     ax_cong.set_xlim(0, MAX_TICKS)
     ax_cong.set_ylim(0, 12)
     ax_cong.set_title("Congestion Over Time", fontsize=9, fontweight='bold')
@@ -181,10 +199,15 @@ def run_animation():
                   edgecolor='#444466', alpha=0.9)
     )
 
-    # ── Update function (called once per frame) ────────────────────────────────
+    # ── Track rush hour car IDs ────────────────────────────────────────────────
+    rush_car_ids = set()
+
+    # ── Animation update function ─────────────────────────────────────────────
+    # This function is called once per frame by FuncAnimation
     def update(tick):
         nonlocal cars, paths, rush_triggered, rush_car_ids
 
+        # ── Rush hour ─────────────────────────────────────────────────────────
         if tick == RUSH_HOUR and not rush_triggered:
             rush_triggered = True
             from cars import create_cars as _create_cars
@@ -194,20 +217,24 @@ def run_animation():
             cars = pd.concat([cars, new_cars], ignore_index=True)
             print(f"  ⚡ Rush hour triggered at tick {tick}")
 
+        # ── Repath ────────────────────────────────────────────────────────────
         if tick % REPATH_EVERY == 0:
             congestion_map = build_congestion_map(cars, GRID_SIZE)
             paths = compute_all_paths(cars, grid, congestion_map)
 
+        # ── Move ──────────────────────────────────────────────────────────────
         congestion_map = build_congestion_map(cars, GRID_SIZE)
         cars = move_cars_with_paths(cars, paths, grid)
 
+        # ── Update congestion overlay ─────────────────────────────────────────
         cong_overlay.set_data(congestion_map)
 
+        # ── Update car scatter plots ───────────────────────────────────────────
         moving_cars  = cars[(cars['status'] == 'moving') &
                             (~cars['car_id'].isin(rush_car_ids))]
         arrived_cars = cars[cars['status'] == 'arrived']
         rush_moving  = cars[(cars['status'] == 'moving') &
-                            (cars['car_id'].isin(rush_car_ids))]
+                             (cars['car_id'].isin(rush_car_ids))]
 
         scat_moving.set_offsets(
             moving_cars[['x', 'y']].values if len(moving_cars) > 0
@@ -222,17 +249,21 @@ def run_animation():
             else np.empty((0, 2))
         )
 
+        # ── Log stats ─────────────────────────────────────────────────────────
         ticks_log.append(tick)
         moving_log.append((cars['status'] == 'moving').sum())
         arrived_log.append((cars['status'] == 'arrived').sum())
         cong_log.append(congestion_map.max())
 
+        # ── Update line charts ────────────────────────────────────────────────
         line_moving.set_data(ticks_log, moving_log)
         line_arrived.set_data(ticks_log, arrived_log)
         line_cong.set_data(ticks_log, cong_log)
         line_mean.set_data(ticks_log,
-                           [build_congestion_map(cars, GRID_SIZE).mean()])
+                           [build_congestion_map(cars, GRID_SIZE).mean()
+                            for _ in [0]])   # current mean only
 
+        # ── Update info box ───────────────────────────────────────────────────
         moving_n  = (cars['status'] == 'moving').sum()
         arrived_n = (cars['status'] == 'arrived').sum()
         total_n   = cars['car_id'].nunique()
@@ -248,32 +279,30 @@ def run_animation():
             f"  PEAK CONG.  : {peak_cong:.1f} cars/cell\n"
             f"  RUSH HOUR   : {rush_str}"
         )
-        
-        fig.canvas.draw_idle()
 
         return (cong_overlay, scat_moving, scat_arrived,
                 scat_rush, line_moving, line_arrived,
                 line_cong, line_mean, info_text)
 
-    # ── Create animation ───────────────────────────────────────────────────────
+    # ── Run the animation ──────────────────────────────────────────────────────
     ani = animation.FuncAnimation(
         fig,
         update,
         frames=MAX_TICKS,
         interval=INTERVAL_MS,
-        blit=True,
+        blit=False,     # blit=False is safer across platforms
         repeat=False
     )
 
-    # ── Optionally save as GIF before showing ──────────────────────────────────
+    plt.show()
+
+    # ── Optionally save as gif ─────────────────────────────────────────────────
     save = input("\nSave animation as GIF? (y/n): ").strip().lower()
     if save == 'y':
         print("Saving... this may take 30–60 seconds...")
-        from matplotlib.animation import PillowWriter
-        ani.save("traffic_simulation.gif", writer=PillowWriter(fps=8), dpi=80,savefig_kwargs={'facecolor': fig.get_facecolor()})
-        print("Saved to traffic_simulation.gif ✓")
-
-    plt.show()
+        ani.save('traffic_simulation.gif',
+                 writer='pillow', fps=8, dpi=80)
+        print("Saved to traffic_simulation.gif")
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
