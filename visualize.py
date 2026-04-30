@@ -258,49 +258,24 @@ def run_animation():
                 line_cong, line_mean, info_text)
 
 
-    ani = animation.FuncAnimation(...)
+   ani = animation.FuncAnimation(
+        fig,
+        update,
+        frames=MAX_TICKS,
+        interval=INTERVAL_MS,
+        blit=False,
+        repeat=False
+    )
 
-save = input("Save animation as GIF? (y/n): ").strip().lower()
-if save == 'y':
-    print("Saving... this may take 30–60 seconds...")
-    from matplotlib.animation import PillowWriter
-    ani.save("traffic_simulation.gif", writer=PillowWriter(fps=8), dpi=80)
-    print("Saved ✓")
+    save = input("Save animation as GIF? (y/n): ").strip().lower()
+    if save == 'y':
+        print("Saving... this may take 30–60 seconds...")
+        from matplotlib.animation import PillowWriter
+        ani.save("traffic_simulation.gif", writer=PillowWriter(fps=8), dpi=80)
+        print("Saved ✓")
 
-plt.show()
+    plt.show()
 
-    
-  save = input("\nSave animation as GIF? (y/n): ").strip().lower()
-  if save == 'y':
-  print("Saving... this may take 30–60 seconds...")
-  from matplotlib.animation import PillowWriter
 
-   
-  grid       = create_city()
-  cars       = create_cars(grid)
-  paths      = {}
-  rush_triggered = False
-  rush_car_ids   = set()
-  ticks_log.clear()
-  moving_log.clear()
-  arrived_log.clear()
-  cong_log.clear()
-
-    # Reset chart limits
-  line_moving.set_data([], [])
-  line_arrived.set_data([], [])
-  line_cong.set_data([], [])
-  line_mean.set_data([], [])
-
-  writer = PillowWriter(fps=8)
-  with writer.saving(fig, "traffic_simulation.gif", dpi=80):
-        for frame in range(MAX_TICKS):
-            update(frame)
-            fig.canvas.draw()
-            writer.grab_frame()
-            if frame % 10 == 0:
-                print(f"  Saving frame {frame}/{MAX_TICKS}...")
-
-  print("Saved to traffic_simulation.gif ✓")
-
-# ── Entry point ────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    run_animation()
